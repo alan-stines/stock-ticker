@@ -40,7 +40,7 @@ const server = http.createServer(async (req,res) => {
     res.setHeader('Content-Type','application/json');
     const symbol = (url.searchParams.get('symbol')||'AAPL').toUpperCase();
     const range = url.searchParams.get('range')||'1D';
-    if (!/^[A-Z^][A-Z0-9.^=-]{0,14}$/.test(symbol) || !ranges[range]) {res.writeHead(400);res.end(JSON.stringify({error:'Invalid symbol or range'}));return;}
+    if (!/^[A-Z^][A-Z0-9.^=-]{0,14}$/.test(symbol) || !Object.hasOwn(ranges,range)) {res.writeHead(400);res.end(JSON.stringify({error:'Invalid symbol or range'}));return;}
     try {res.end(JSON.stringify(await market(symbol,range)));}
     catch(error) {res.writeHead(502);res.end(JSON.stringify({error:error.message}));}
     return;
@@ -49,8 +49,8 @@ const server = http.createServer(async (req,res) => {
     const path = resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
     if (!path.startsWith(root)) {res.writeHead(403);res.end();return;}
     const body = await readFile(path);
-    res.setHeader('Content-Type', {'.html':'text/html','.css':'text/css','.js':'text/javascript'}[extname(path)]||'application/octet-stream');
+    res.setHeader('Content-Type', {'.html':'text/html','.css':'text/css','.js':'text/javascript','.png':'image/png'}[extname(path)]||'application/octet-stream');
     res.end(body);
   } catch {res.writeHead(404);res.end('Not found');}
 });
-server.listen(Number(process.env.PORT)||3000,'127.0.0.1',()=>console.log('Market Signal → http://localhost:'+(process.env.PORT||3000)));
+server.listen(Number(process.env.PORT)||3000,'127.0.0.1',()=>console.log('MGA → http://localhost:'+(process.env.PORT||3000)));
