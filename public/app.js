@@ -1,6 +1,9 @@
+import {demoMode} from './config.js';
 const $=id=>document.getElementById(id);
 const kiosk=new URLSearchParams(location.search).get('mode')!=='edit';
 document.body.classList.toggle('kiosk',kiosk);
+let snapshotPromise;
+if(demoMode){document.body.classList.add('demo');$('demo-notice').hidden=false;$('demo-notice').textContent='DEMO · Recorded market snapshots · Not live data';}
 const names={AAPL:'Apple',MSFT:'Microsoft',NVDA:'NVIDIA',GOOGL:'Alphabet',AMZN:'Amazon',META:'Meta Platforms',TSLA:'Tesla',AMD:'Advanced Micro Devices'};
 let watch;
 try {if(!kiosk)watch=JSON.parse(localStorage.getItem('market-watch'))}catch{}
@@ -15,7 +18,16 @@ const movement=q=>`${q.percent>=0?'+':''}${q.percent.toFixed(2)}%`;
 const direction=q=>q.percent>=0?'up':'down';
 const time=q=>q.time?new Date(q.time*1000).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}):'Timestamp unavailable';
 const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e};
-async function fetchMarket(symbol,r='1D') {const res=await fetch(`/api/market?symbol=${encodeURIComponent(symbol)}&range=${r}`,{signal:AbortSignal.timeout(20000)});const data=await res.json();if(!res.ok)throw new Error(data.error||'Data unavailable');return data;}
+async function fetchMarket(symbol,r='1D') {
+ if(demoMode){
+  snapshotPromise??=fetch('./snapshot.json').then(res=>{if(!res.ok)throw new Error('Demo snapshot unavailable');return res.json()}).catch(error=>{snapshotPromise=null;throw error});
+  const snapshot=await snapshotPromise;
+  $('demo-notice').textContent=`DEMO · Recorded ${new Date(snapshot.capturedAt).toLocaleString()} · Not live data · 1-day history`;
+  if(r!=='1D')throw new Error('Demo includes 1-day history only');
+  const data=snapshot.quotes[symbol];if(!data)throw new Error('Symbol not included in this demo');
+  return {...data,timing:'Recorded demo snapshot · Not live data'};
+ }
+const res=await fetch(`/api/market?symbol=${encodeURIComponent(symbol)}&range=${r}`,{signal:AbortSignal.timeout(20000)});const data=await res.json();if(!res.ok)throw new Error(data.error||'Data unavailable');return data;}
 function save(){try{localStorage.setItem('market-watch',JSON.stringify(watch))}catch{}}
 function renderIndices(){ $('indices').replaceChildren(...[['^GSPC','S&P 500'],['^IXIC','NASDAQ COMPOSITE'],['^DJI','DOW JONES']].map(([s,label])=>{const q=quotes.get(s),card=el('article','index-card');card.append(el('div','index-label',label),el('strong','',q?number(q.price):'—'),el('span',`movement ${q?direction(q):''}`,q?`${movement(q)}  ${q.percent>=0?'↗':'↘'}`:'Data unavailable'),el('div','index-time',q?`${q.stale?'STALE · ':''}${time(q)}`:'Awaiting provider'));return card}));}
 function renderWatch(){ $('watch-count').textContent=watch.length;$('watch-items').replaceChildren(...watch.map(s=>{const q=quotes.get(s),row=el('div','watch-row'),button=el(kiosk?'div':'button',`watch-select ${s===selected?'selected':''}`);if(!kiosk)button.setAttribute('aria-pressed',s===selected);const company=el('div','watch-company');company.append(el('strong','',s),el('small','',q?.name||names[s]||s));const value=el('div','watch-value');value.append(el('span','',q?money(q.price,q.currency):'—'),el('small',q?direction(q):'',q?`${q.stale?'Stale · ':''}${movement(q)}`:(errors.has(s)?'Unavailable':'Loading…')));button.append(company,value);button.onclick=()=>select(s);const remove=el('button','remove','×');remove.setAttribute('aria-label',`Remove ${s}`);remove.onclick=()=>{if(watch.length===1){$('form-error').textContent='Keep at least one symbol in your watchlist.';return}watch=watch.filter(x=>x!==s);save();if(selected===s)select(watch[0]);renderAll()};row.append(button);if(!kiosk)row.append(remove);return row}));
@@ -35,7 +47,7 @@ async function refresh(){
   await Promise.all([...watch,'^GSPC','^IXIC','^DJI'].map(async s=>{try{quotes.set(s,await fetchMarket(s));errors.delete(s)}catch(e){errors.set(s,e.message);if(quotes.has(s))quotes.set(s,{...quotes.get(s),stale:true})}}));
   renderAll();await loadChart();
   const available=watch.filter(s=>quotes.has(s)).length,stale=watch.filter(s=>quotes.get(s)?.stale).length;
-  $('refresh-status').textContent=available?`${available}/${watch.length} quotes · ${stale?`${stale} stale · retrying automatically`:`Updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`}`:'Provider unavailable · retrying automatically';
+  $('refresh-status').textContent=demoMode?'Recorded demo · Auto-cycling':available?`${available}/${watch.length} quotes · ${stale?`${stale} stale · retrying automatically`:`Updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`}`:'Provider unavailable · retrying automatically';
  } catch(e){$('refresh-status').textContent='Connection interrupted · retrying automatically';}
  finally{refreshing=false;$('refresh').disabled=false;}
 }

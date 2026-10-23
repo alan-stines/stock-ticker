@@ -9,3 +9,5 @@ body.kiosk{cursor:none}body.kiosk .shell{height:100vh;display:flex;flex-directio
 @media(max-width:1000px){body.kiosk .shell{height:auto;min-height:100vh}body.kiosk .chart-wrap{min-height:200px}body.kiosk #watch-items{overflow:visible}body.kiosk .watch-row{min-height:48px}.mga-logo{width:200px}body.kiosk .brand-descriptor{display:none}}
 
 body.kiosk .watch-company small,body.kiosk .watch-value small{margin-top:1px;line-height:1.15}body.kiosk .watch-company strong,body.kiosk .watch-value>span{line-height:1.15}body.kiosk .watch-select{padding:2px 0}body.kiosk .featured .data-note{font-size:8px;line-height:1.25}body.kiosk .stock-stats strong{margin-top:4px}
+
+.demo-notice{margin:8px 0 0;padding:8px 14px;background:var(--brand);color:white;border-radius:6px;font-size:12px;flex-shrink:0}.demo #ranges button:not([data-range="1D"]),.demo #add-form,.demo #form-error{display:none}

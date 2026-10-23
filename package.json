@@ -1,1 +1,15 @@
-{"name":"market-signal","version":"1.0.0","private":true,"type":"module","scripts":{"start":"node server.js","test":"node --test"},"engines":{"node":">=22"}}
+{
+  "name": "market-signal",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test",
+    "capture:demo": "node scripts/capture-demo.js",
+    "build:demo": "node scripts/build-demo.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
