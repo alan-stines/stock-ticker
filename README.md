@@ -40,3 +40,13 @@ msedge.exe --kiosk http://localhost:3000 --edge-kiosk-type=fullscreen --no-first
 ```
 
 Configure the display computer to sign in to its kiosk account and keep the screen awake. Browser kiosk launch supplies fullscreen without a user gesture; the webpage cannot enable browser fullscreen automatically. Use a landscape display, ideally 1920×1080 (the layout also adapts to 1280×720). The supplied MGA logo is served locally. An internet connection is required for fresh market data. Machine startup, browser launch, and power settings must be configured on the actual kiosk computer.
+
+## GitHub Pages demo
+
+The static demo uses recorded real data from `demo/snapshot.json`, displays its capture timestamp, and is explicitly labeled **Not live data**. It rotates unattended and includes one-day history for the eight default stocks and three indices. The live local application still uses the Node API. Demo assets use relative paths so repository subpaths work.
+
+Build with `npm run build:demo`. The generated `dist/` folder is ignored by Git; the recorded snapshot is intentionally tracked. To refresh the snapshot, run the local server, then `npm run capture:demo` (defaults to port 3000). Set `SNAPSHOT_API` to use a different local API address. Capture fails rather than saving incomplete or stale quotes.
+
+To publish, push the source to GitHub, choose **Settings → Pages → Source → GitHub Actions**, then run **Actions → Deploy Pages demo → Run workflow**. Deployment is manual; the workflow does not fetch fresh prices or require market API credentials. The published URL appears in the workflow deployment result.
+
+Do not commit credentials, `.env` files, logs, generated output, or machine-specific kiosk settings. `.gitignore` excludes these common local files; `.env.example` may be tracked with placeholders only.
